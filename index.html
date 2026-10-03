@@ -4,17 +4,1161 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2A1F27">
-<title>ระบบสมาชิก</title>
+<title>หลังร้าน</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💇</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <style>
-  html, body { margin: 0; height: 100%; background: #2A1F27; }
-  iframe { border: 0; width: 100%; height: 100%; display: block; }
+:root{
+  --brand:#6A2C55;--brand-d:#4A1D3B;--ink:#2A1F27;--muted:#6B5A64;--sub:#5A4852;
+  --line:#E8DCE2;--line2:#F0E6EB;--blush:#F7EFF2;--field:#CDBAC4;--bg:#FBF8F9;
+  --ok:#0B6B36;--ok-bg:#E6F8EE;--err:#A3324A;--err-bg:#FBEAEE;
+  --bar-h:0px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Anuphan','Noto Sans Thai',system-ui,sans-serif;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font-family:inherit;font-size:16px;color:inherit}
+button{cursor:pointer}
+h1,h2,h3,p{margin:0}
+:focus-visible{outline:3px solid #B98AA8;outline-offset:2px}
+.hidden{display:none!important}
+.app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+
+/* ---------- header ---------- */
+.bar{background:var(--ink);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 8px 0 20px;position:sticky;top:0;z-index:20}
+.bar-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.shop{font-size:17px;font-weight:700;line-height:1.3}
+.who{display:flex;align-items:center;gap:8px;font-size:13px;color:#E2D6DC;margin-top:2px}
+.role{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.14);color:#fff}
+.icon-btn{width:44px;height:44px;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;border-radius:12px}
+.tabs{display:flex;gap:4px;margin-top:4px}
+.tab{background:transparent;border:0;color:#D9CCD3;padding:10px 12px 12px;font-size:15px;font-weight:500;border-bottom:3px solid transparent;display:flex;align-items:center}
+.tab[aria-selected="true"]{color:#fff;border-bottom-color:#E9B8D2}
+.badge{display:inline-flex;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#E9B8D2;color:var(--ink);font-size:12px;font-weight:700;align-items:center;justify-content:center;margin-left:6px}
+
+main{padding:16px 16px 32px;display:flex;flex-direction:column;gap:14px;flex:1}
+main.with-bar{padding-bottom:calc(var(--bar-h) + 24px)}
+
+/* ---------- building blocks ---------- */
+.sec{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.sec-h h2{font-size:16px;font-weight:700}
+.muted{color:var(--muted);font-size:13px}
+.label{font-size:14px;font-weight:600;display:block;margin-bottom:6px}
+.row{display:flex;align-items:center;gap:12px}
+.between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.stack{display:flex;flex-direction:column;gap:12px}
+
+.btn{min-height:48px;border-radius:12px;border:1px solid var(--field);background:#fff;font-size:15px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;color:var(--ink)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.btn.danger{border:1.5px solid var(--err);color:var(--err);font-weight:600;background:#fff}
+.btn.ghost{border:0;background:transparent;color:var(--brand);font-weight:600;min-height:40px;padding:0 10px}
+.btn.big{min-height:52px;font-size:17px;border-radius:14px;width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+.field{height:48px;border:1px solid var(--field);border-radius:12px;padding:0 14px;background:#fff;width:100%;font-size:16px;-webkit-appearance:none;appearance:none;color:var(--ink)}
+select.field{padding-right:40px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A4852' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:16px}
+textarea.field{height:auto;min-height:88px;padding:12px 14px;resize:vertical}
+.field::placeholder{color:#9A8B93}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:14px;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.chip .p{color:var(--muted);font-size:13px}
+.chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.chip.add:active{background:var(--blush)}
+
+.avatar{width:44px;height:44px;border-radius:50%;background:#EEDFE6;color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.tier{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;color:#fff;background:var(--brand);white-space:nowrap}
+
+/* ---------- find ---------- */
+.find-hero{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 16px;display:flex;flex-direction:column;gap:12px}
+.scan-big{min-height:64px;font-size:18px;border-radius:16px}
+.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.pick{width:100%;text-align:left;border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px 14px;display:flex;align-items:center;gap:12px}
+
+/* ---------- member strip ---------- */
+.mstrip{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.mname{font-size:16px;font-weight:600;line-height:1.3}
+.mstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mstat{background:var(--blush);border-radius:12px;padding:8px 10px}
+.mstat span{display:block;font-size:12px;color:var(--sub)}
+.mstat b{display:block;font-size:16px}
+
+/* ---------- bill ---------- */
+.bill-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line2)}
+.bill-item:first-child{border-top:0}
+.bill-item .name{flex:1;min-width:0;font-size:15px}
+.free-tag{display:block;font-size:12px;color:var(--ok);font-weight:600}
+.price{width:104px;height:42px;text-align:right}
+.rm{width:40px;height:40px;border:0;background:transparent;color:var(--muted);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bill-empty{border:1.5px dashed var(--line);border-radius:12px;padding:14px;text-align:center;color:var(--muted);font-size:14px}
+
+.perk{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:#F6F3F4}
+.perk.on{background:var(--ok-bg)}
+.perk .t{font-size:14px;font-weight:600}
+.switch{width:48px;height:28px;border:0;border-radius:999px;background:#C9BCC3;padding:3px;display:flex;flex-shrink:0;transition:background .15s}
+.switch span{width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch[aria-checked="true"]{background:var(--ok)}
+.switch[aria-checked="true"] span{transform:translateX(20px)}
+.switch:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------- payment ---------- */
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--field);border-radius:12px;overflow:hidden}
+.seg button{min-height:52px;border:0;background:#fff;font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px}
+.seg button+button{border-left:1px solid var(--field)}
+.seg button small{font-size:11px;color:var(--muted);font-weight:400}
+.seg button[aria-pressed="true"]{background:var(--brand);color:#fff;font-weight:600}
+.seg button:disabled{background:#F6F3F4;color:#8A7C84;cursor:not-allowed}
+.slip-pick{border:1.5px dashed var(--field);border-radius:14px;padding:12px;display:flex;align-items:center;gap:12px;background:#fff;cursor:pointer}
+.slip-pick.done{border-style:solid;border-color:var(--ok);background:#F6FCF8}
+.slip-pick img{width:52px;height:68px;object-fit:cover;border-radius:8px;flex-shrink:0}
+.slip-pick .ph{width:52px;height:68px;border-radius:8px;background:#F4F1F2;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sum{display:flex;flex-direction:column;gap:6px;background:var(--blush);border-radius:14px;padding:12px 14px}
+.sum div{display:flex;justify-content:space-between;font-size:14px;gap:12px}
+.sum .k{color:var(--sub)}
+
+/* ---------- sticky pay bar ---------- */
+.paybar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(42,31,39,.06)}
+.paybar-in{max-width:560px;margin:0 auto;padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+.paybar-warn{font-size:13px;color:var(--err);background:var(--err-bg);border-radius:10px;padding:6px 10px;line-height:1.45}
+.pb-total{font-size:24px;font-weight:700;line-height:1.1}
+
+/* ---------- misc ---------- */
+.warn{background:var(--err-bg);color:var(--err);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.5}
+.note{background:#FBF1E2;color:#6B4A0E;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5}
+.empty{text-align:center;color:var(--muted);padding:28px 12px;font-size:15px}
+.login{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:32px 20px;background:#fff}
+.logo{width:56px;height:56px;border-radius:16px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;margin:0 auto 12px}
+.pin-dots{display:flex;gap:14px;justify-content:center;min-height:18px}
+.pin-dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--field)}
+.pin-dots i.on{background:var(--brand);border-color:var(--brand)}
+.keypad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:320px;margin:0 auto;width:100%}
+.key{height:64px;border-radius:16px;border:1px solid var(--line);background:#fff;font-size:24px;font-weight:600}
+.key:active{background:var(--blush)}
+.key.fn{font-size:15px;font-weight:500;color:var(--sub)}
+.sheet-bg{position:fixed;inset:0;background:rgba(42,31,39,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.sheet h2{font-size:19px}
+.scan-view{position:relative;width:100%;aspect-ratio:1/1;border-radius:16px;overflow:hidden;background:#111}
+.scan-view video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scan-frame{position:absolute;inset:13%;border:3px solid rgba(255,255,255,.95);border-radius:20px;box-shadow:0 0 0 999px rgba(0,0,0,.38)}
+.slip-img{width:100%;border-radius:12px;border:1px solid var(--line);display:block}
+.toast{position:fixed;left:50%;bottom:calc(var(--bar-h) + 16px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:90;max-width:90vw;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.toast.err{background:var(--err)}
+.loading{position:fixed;inset:0;background:rgba(255,255,255,.65);z-index:80;display:flex;align-items:center;justify-content:center}
+.spinner{width:36px;height:36px;border-radius:50%;border:4px solid #E6D6DE;border-top-color:var(--brand);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.spinner{animation-duration:2.4s}}
+.result-icon{width:64px;height:64px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:flex;align-items:center;justify-content:center;margin:0 auto}
+
+/* ---------- tablet / desktop ---------- */
+@media (min-width:860px){
+  .app{max-width:1040px}
+  .paybar-in{max-width:1040px}
+  #ck-member:not(.hidden){display:grid!important;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+  #ck-member .col{display:flex;flex-direction:column;gap:14px}
+  #ck-find,#ck-result,#p-admin>*{max-width:560px;width:100%;margin-left:auto;margin-right:auto}
+}
 </style>
 </head>
 <body>
-<iframe
-  src="https://script.google.com/macros/s/AKfycbxl45tVrTbzampsNjhG9y-A-BWnDXWZu5B8mwnqh6_egHsxDlJ9EsHiCHK0ZjpBlIiH/exec"
-  allow="camera; clipboard-write"
-  title="หลังร้าน"></iframe>
+<div class="app">
+
+  <!-- ============ LOGIN ============ -->
+  <section id="v-login" class="login" aria-labelledby="login-title">
+    <div style="text-align:center">
+      <div class="logo" aria-hidden="true">B</div>
+      <h1 id="login-title" style="font-size:22px">หลังร้าน</h1>
+      <p class="muted" style="margin-top:6px;font-size:15px">กรอก PIN เพื่อเข้าใช้งาน</p>
+    </div>
+    <div class="pin-dots" id="pin-dots" aria-live="polite"></div>
+    <div id="pin-err" class="warn hidden" role="alert" style="max-width:320px;margin:0 auto;width:100%;text-align:center"></div>
+    <div class="keypad" id="keypad"></div>
+    <button class="btn primary big" id="btn-login" disabled style="max-width:320px;margin:0 auto">เข้าสู่ระบบ</button>
+  </section>
+
+  <!-- ============ APP ============ -->
+  <section id="v-app" class="hidden" style="display:flex;flex-direction:column;flex:1">
+    <header class="bar">
+      <div class="bar-top">
+        <div style="min-width:0">
+          <div class="shop" id="shop-name">หลังร้าน</div>
+          <div class="who"><span id="who-name"></span><span class="role" id="who-role"></span></div>
+        </div>
+        <button class="icon-btn" id="btn-logout" aria-label="ออกจากระบบ">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h10"/></svg>
+        </button>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-checkout" aria-selected="true">ชำระค่าบริการ</button>
+        <button class="tab hidden" role="tab" id="tab-admin" aria-selected="false">อนุมัติสลิป<span class="badge hidden" id="pending-badge">0</span></button>
+      </div>
+    </header>
+
+    <!-- ---------- CHECKOUT ---------- -->
+    <main id="p-checkout">
+
+      <!-- find customer -->
+      <div id="ck-find" class="stack" style="gap:14px">
+        <div class="find-hero">
+          <button class="btn dark big scan-big" id="btn-scan">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M4 12h16"/></svg>
+            สแกน QR บัตรสมาชิก
+          </button>
+          <label class="btn" for="qr-photo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            ถ่ายรูป QR แทน
+          </label>
+          <input id="qr-photo" type="file" accept="image/*" capture="environment" class="hidden">
+          <div class="or">หรือค้นหา</div>
+          <form id="f-search" class="row" autocomplete="off" style="gap:10px">
+            <label for="q" class="hidden">เบอร์โทรหรือรหัสสมาชิก</label>
+            <input class="field" id="q" placeholder="เบอร์โทรหรือรหัสสมาชิก" inputmode="search">
+            <button class="btn primary" type="submit" style="flex-shrink:0">ค้นหา</button>
+          </form>
+        </div>
+        <div id="search-results" class="stack"></div>
+      </div>
+
+      <!-- bill -->
+      <div id="ck-member" class="hidden" style="display:flex;flex-direction:column;gap:14px">
+        <div class="col" style="display:flex;flex-direction:column;gap:14px">
+          <div class="mstrip" id="m-strip"></div>
+
+          <section class="sec" aria-labelledby="h-svc">
+            <div class="sec-h"><h2 id="h-svc">บริการ</h2><span class="muted" id="cart-count"></span></div>
+            <div class="chips" id="svc-chips"></div>
+            <div id="cart"></div>
+          </section>
+
+          <section class="sec hidden" id="perks-sec" aria-labelledby="h-perk">
+            <div class="sec-h"><h2 id="h-perk">สิทธิ์ของลูกค้า</h2></div>
+            <div id="perks" class="stack" style="gap:8px"></div>
+          </section>
+        </div>
+
+        <div class="col" style="display:flex;flex-direction:column;gap:14px">
+          <section class="sec" aria-labelledby="h-pay">
+            <div class="sec-h"><h2 id="h-pay">ชำระเงิน</h2></div>
+            <div class="seg" id="seg-method" role="group" aria-label="วิธีชำระ">
+              <button type="button" data-m="CREDIT" aria-pressed="false"><span>เครดิต</span></button>
+              <button type="button" data-m="CASH" aria-pressed="false"><span>เงินสด</span></button>
+              <button type="button" data-m="TRANSFER" aria-pressed="false"><span>โอน</span></button>
+              <button type="button" data-m="MIXED" aria-pressed="false"><span>ผสม</span></button>
+            </div>
+
+            <div id="mixed-wrap" class="hidden stack">
+              <div>
+                <label class="label" for="mixed-credit">ตัดจากเครดิต (บาท)</label>
+                <input id="mixed-credit" class="field" type="number" inputmode="decimal" min="0">
+              </div>
+              <div>
+                <span class="label">ส่วนที่เหลือรับเป็น</span>
+                <div class="chips" id="rest-chips">
+                  <button type="button" class="chip" data-r="CASH" aria-pressed="true">เงินสด</button>
+                  <button type="button" class="chip" data-r="TRANSFER" aria-pressed="false">โอน</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="slip-wrap" class="hidden">
+              <span class="label">สลิปโอนจากลูกค้า <span style="color:var(--err)">*</span></span>
+              <label class="slip-pick" id="slip-pick" for="pay-slip">
+                <span id="pay-slip-thumb" class="ph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+                <span style="flex:1"><b style="display:block;font-size:15px" id="pay-slip-t">ถ่ายรูปสลิปจากมือถือลูกค้า</b>
+                <span class="muted" id="pay-slip-s">ต้องแนบก่อนกดยืนยัน</span></span>
+              </label>
+              <input id="pay-slip" type="file" accept="image/*" capture="environment" class="hidden">
+            </div>
+
+            <div class="grid2">
+              <div>
+                <label class="label" for="stylist">ช่าง</label>
+                <select id="stylist" class="field"></select>
+              </div>
+              <div>
+                <label class="label" for="bill-note">หมายเหตุ</label>
+                <input id="bill-note" class="field" placeholder="ไม่บังคับ">
+              </div>
+            </div>
+
+            <div class="sum" id="summary"></div>
+          </section>
+
+          <button class="btn big" id="btn-change">ยกเลิกบิลนี้</button>
+        </div>
+      </div>
+
+      <!-- result -->
+      <div id="ck-result" class="stack hidden" style="gap:14px"></div>
+    </main>
+
+    <!-- ---------- ADMIN ---------- -->
+    <main id="p-admin" class="hidden">
+      <div class="between">
+        <div class="chips" id="adm-tabs">
+          <button class="chip" data-s="PENDING" aria-pressed="true">รอตรวจ</button>
+          <button class="chip" data-s="APPROVED" aria-pressed="false">อนุมัติแล้ว</button>
+          <button class="chip" data-s="REJECTED" aria-pressed="false">ปฏิเสธ</button>
+        </div>
+        <button class="icon-btn" id="adm-refresh" aria-label="โหลดรายการใหม่" style="color:var(--sub)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+        </button>
+      </div>
+      <div id="adm-list" class="stack" style="gap:14px"></div>
+    </main>
+  </section>
+</div>
+
+<!-- sticky pay bar -->
+<div class="paybar hidden" id="paybar">
+  <div class="paybar-in">
+    <div id="paybar-warn" class="paybar-warn hidden" role="alert"></div>
+    <div class="row">
+      <div style="flex:1;min-width:0">
+        <div class="muted">ต้องชำระ</div>
+        <div class="pb-total" id="pb-total">฿0</div>
+      </div>
+      <button class="btn primary" id="btn-pay" style="min-height:52px;flex:1.6;font-size:16px" disabled>ยืนยัน</button>
+    </div>
+  </div>
+</div>
+
+<div id="sheet-bg" class="sheet-bg hidden" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
+<div id="loading" class="loading hidden"><div class="spinner" role="status" aria-label="กำลังโหลด"></div></div>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script>
+// ================================================================
+// CONFIG / API
+// ================================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbxl45tVrTbzampsNjhG9y-A-BWnDXWZu5B8mwnqh6_egHsxDlJ9EsHiCHK0ZjpBlIiH/exec';
+const ACTIONS = {
+  staffLogin: pin => ({ staffAction: 'login', pin: pin }),
+  staffLogout: t => ({ staffAction: 'logout', token: t }),
+  staffBootstrap: t => ({ staffAction: 'bootstrap', token: t }),
+  staffFindMember: (t, q) => ({ staffAction: 'findMember', token: t, query: q }),
+  staffCheckout: (t, p) => ({ staffAction: 'checkout', token: t, payload: p }),
+  adminListPurchases: (t, st) => ({ staffAction: 'listPurchases', token: t, status: st }),
+  adminGetSlip: (t, id) => ({ staffAction: 'getSlip', token: t, purchaseId: id }),
+  adminApprovePurchase: (t, id) => ({ staffAction: 'approvePurchase', token: t, purchaseId: id }),
+  adminRejectPurchase: (t, id, r) => ({ staffAction: 'rejectPurchase', token: t, purchaseId: id, reason: r })
+};
+async function call(fn, ...args) {
+  let res;
+  try {
+    res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(ACTIONS[fn](...args))
+    });
+  } catch (e) { throw new Error('เชื่อมต่ออินเทอร์เน็ตไม่ได้ ลองใหม่อีกครั้ง'); }
+  if (!res.ok) throw new Error('ระบบไม่ตอบสนอง ลองใหม่อีกครั้ง');
+  const j = await res.json();
+  if (!j.ok) {
+    if (String(j.error).indexOf('SESSION_EXPIRED') >= 0) {
+      forceLogout('หมดเวลาใช้งาน กรุณาเข้าสู่ระบบใหม่');
+      throw new Error('SESSION_EXPIRED');
+    }
+    throw new Error(j.error || 'เกิดข้อผิดพลาด');
+  }
+  return j.data;
+}
+
+// ================================================================
+// helpers
+// ================================================================
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n || 0).toLocaleString('th-TH', { maximumFractionDigits: 2 });
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ADMIN_ROLES = ['ADMIN', 'OWNER'];
+const ROLE_TH = { OWNER: 'เจ้าของร้าน', ADMIN: 'แอดมิน', STAFF: 'พนักงาน' };
+const TIER_STYLE = {
+  BRONZE: ['#8C5A3C', '#FFFFFF'], SILVER: ['#5F6470', '#FFFFFF'],
+  GOLD: ['#F2D98C', '#4A3608'], PLATINUM: ['#34405E', '#FFFFFF']
+};
+const ICON_X = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const ICON_CHECK = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>';
+const ICON_SLIP = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>';
+const ICON_CAM = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+
+const S = {
+  token: null, me: null, boot: null,
+  member: null, cart: [], perkIds: new Set(), method: 'CASH', mixedCredit: 0, rest: 'CASH', paySlip: null,
+  admTab: 'PENDING', slipCache: {}
+};
+
+let toastTimer = null;
+function toast(msg, isErr) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), isErr ? 4500 : 2600);
+}
+function toastErr(e) { if (e && e.message !== 'SESSION_EXPIRED') toast(e.message || String(e), true); }
+function loading(on) { $('loading').classList.toggle('hidden', !on); }
+
+function openSheet(html) {
+  $('sheet').innerHTML = html;
+  $('sheet-bg').classList.remove('hidden');
+}
+function closeSheet() {
+  stopScanner();
+  $('sheet-bg').classList.add('hidden');
+  $('sheet').innerHTML = '';
+}
+$('sheet-bg').addEventListener('click', e => { if (e.target.id === 'sheet-bg') closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('sheet-bg').classList.contains('hidden')) closeSheet(); });
+
+function confirmSheet(title, bodyHtml, okText, okClass) {
+  return new Promise(resolve => {
+    openSheet(`<h2>${esc(title)}</h2>${bodyHtml}
+      <div class="grid2"><button class="btn big" id="cf-no">ยกเลิก</button>
+      <button class="btn big ${okClass || 'primary'}" id="cf-ok">${esc(okText)}</button></div>`);
+    $('cf-no').onclick = () => { closeSheet(); resolve(false); };
+    $('cf-ok').onclick = () => { closeSheet(); resolve(true); };
+  });
+}
+
+function tierPill(code, name) {
+  if (!code) return '<span class="muted">ยังไม่มีระดับ</span>';
+  const st = TIER_STYLE[code] || ['#6A2C55', '#FFFFFF'];
+  return `<span class="tier" style="background:${st[0]};color:${st[1]}">${esc(name || code)}</span>`;
+}
+function avatarHtml(name, pic) {
+  if (pic) return `<div class="avatar"><img src="${esc(pic)}" alt=""></div>`;
+  return `<div class="avatar" aria-hidden="true">${esc(String(name || '?').trim().charAt(0))}</div>`;
+}
+
+// pay bar: แสดงเมื่ออยู่หน้าบิล และตั้งระยะเผื่อด้านล่างให้เนื้อหาไม่ถูกบัง
+function setPayBar(show) {
+  $('paybar').classList.toggle('hidden', !show);
+  $('p-checkout').classList.toggle('with-bar', show);
+  requestAnimationFrame(() => {
+    const h = show ? $('paybar').offsetHeight : 0;
+    document.documentElement.style.setProperty('--bar-h', h + 'px');
+  });
+}
+
+// ================================================================
+// login
+// ================================================================
+let pin = '';
+$('keypad').innerHTML = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'].map(k => {
+  if (k === 'clear') return '<button class="key fn" data-k="clear">ล้าง</button>';
+  if (k === 'back') return '<button class="key fn" data-k="back" aria-label="ลบตัวสุดท้าย">ลบ</button>';
+  return `<button class="key" data-k="${k}">${k}</button>`;
+}).join('');
+$('keypad').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) pressKey(b.dataset.k); });
+document.addEventListener('keydown', e => {
+  if ($('v-login').classList.contains('hidden')) return;
+  if (/^\d$/.test(e.key)) pressKey(e.key);
+  else if (e.key === 'Backspace') pressKey('back');
+  else if (e.key === 'Enter') doLogin();
+});
+function pressKey(k) {
+  $('pin-err').classList.add('hidden');
+  if (k === 'clear') pin = '';
+  else if (k === 'back') pin = pin.slice(0, -1);
+  else if (pin.length < 8) pin += k;
+  renderPin();
+}
+function renderPin() {
+  const n = Math.max(6, pin.length);
+  $('pin-dots').innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < pin.length ? 'on' : ''}"></i>`).join('');
+  $('pin-dots').setAttribute('aria-label', 'กรอกแล้ว ' + pin.length + ' หลัก');
+  $('btn-login').disabled = pin.length < 4;
+}
+$('btn-login').onclick = doLogin;
+
+async function doLogin() {
+  if (pin.length < 4) return;
+  loading(true);
+  try {
+    const r = await call('staffLogin', pin);
+    S.token = r.token;
+    try { localStorage.setItem('salon_staff', JSON.stringify({ token: r.token })); } catch (e) {}
+    pin = ''; renderPin();
+    await enterApp();
+  } catch (e) {
+    pin = ''; renderPin();
+    $('pin-err').textContent = e.message;
+    $('pin-err').classList.remove('hidden');
+  } finally { loading(false); }
+}
+
+async function enterApp() {
+  S.boot = await call('staffBootstrap', S.token);
+  S.me = S.boot.me;
+  $('shop-name').textContent = S.boot.shopName || 'หลังร้าน';
+  $('who-name').textContent = S.me.name;
+  $('who-role').textContent = ROLE_TH[S.me.role] || S.me.role;
+  $('stylist').innerHTML = '<option value="">ไม่ระบุ</option>' + S.boot.stylists.map(n => `<option>${esc(n)}</option>`).join('');
+  $('svc-chips').innerHTML = S.boot.services.map(s =>
+    `<button class="chip add" data-code="${esc(s.code)}">+ ${esc(s.name)}<span class="p">฿${fmt(s.price)}</span></button>`).join('');
+  const isAdmin = ADMIN_ROLES.indexOf(S.me.role) >= 0;
+  $('tab-admin').classList.toggle('hidden', !isAdmin);
+  $('v-login').classList.add('hidden');
+  $('v-app').classList.remove('hidden');
+  showTab('checkout');
+  resetCheckout();
+  if (isAdmin) refreshPendingBadge();
+}
+
+$('btn-logout').onclick = async () => {
+  const ok = await confirmSheet('ออกจากระบบ?', '<p class="muted" style="font-size:15px">ต้องกรอก PIN ใหม่เมื่อเข้าใช้งานครั้งถัดไป</p>', 'ออกจากระบบ', 'dark');
+  if (!ok) return;
+  call('staffLogout', S.token).catch(() => {});
+  forceLogout();
+};
+function forceLogout(msg) {
+  S.token = null; S.me = null;
+  try { localStorage.removeItem('salon_staff'); } catch (e) {}
+  closeSheet();
+  setPayBar(false);
+  $('v-app').classList.add('hidden');
+  $('v-login').classList.remove('hidden');
+  pin = ''; renderPin();
+  if (msg) toast(msg, true);
+}
+
+// ================================================================
+// tabs
+// ================================================================
+$('tab-checkout').onclick = () => showTab('checkout');
+$('tab-admin').onclick = () => showTab('admin');
+function showTab(t) {
+  $('tab-checkout').setAttribute('aria-selected', t === 'checkout');
+  $('tab-admin').setAttribute('aria-selected', t === 'admin');
+  $('p-checkout').classList.toggle('hidden', t !== 'checkout');
+  $('p-admin').classList.toggle('hidden', t !== 'admin');
+  setPayBar(t === 'checkout' && !$('ck-member').classList.contains('hidden'));
+  if (t === 'admin') loadAdmin();
+}
+
+// ================================================================
+// find member
+// ================================================================
+$('f-search').addEventListener('submit', e => { e.preventDefault(); $('q').blur(); doSearch($('q').value); });
+
+async function doSearch(q) {
+  q = String(q || '').trim();
+  if (!q) return;
+  loading(true);
+  $('search-results').innerHTML = '';
+  try {
+    const list = await call('staffFindMember', S.token, q);
+    if (!list.length) {
+      $('search-results').innerHTML = '<div class="empty">ไม่พบสมาชิก ตรวจเบอร์หรือรหัสสมาชิกอีกครั้ง</div>';
+    } else if (list.length === 1) {
+      selectMember(list[0]);
+    } else {
+      window._picks = list;
+      $('search-results').innerHTML = '<p class="label">พบหลายคน เลือกลูกค้า</p>' + list.map((m, i) => `
+        <button class="pick" data-i="${i}">${avatarHtml(m.name, m.picture)}
+          <span style="flex:1;min-width:0"><b style="display:block;font-size:15px">${esc(m.name)}</b>
+          <span class="muted">${esc(m.memberId)} เบอร์ ${esc(m.phone)}</span></span>${tierPill(m.tierCode, m.tierName)}</button>`).join('');
+    }
+  } catch (e) { toastErr(e); } finally { loading(false); }
+}
+$('search-results').addEventListener('click', e => {
+  const b = e.target.closest('.pick');
+  if (b) selectMember(window._picks[Number(b.dataset.i)]);
+});
+
+// ---------------- live QR scanner (getUserMedia + jsQR / BarcodeDetector) ----------------
+const SC = { stream: null, timer: null, canvas: null, ctx: null, detector: null, busy: false };
+
+function cameraErrorText(e) {
+  const n = (e && e.name) || '';
+  if (n === 'NotAllowedError' || n === 'SecurityError') return 'ไม่ได้รับสิทธิ์ใช้กล้อง ตรวจการตั้งค่ากล้องของเว็บนี้ แล้วรีเฟรชหน้า';
+  if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'ไม่พบกล้องในเครื่องนี้ ใช้ปุ่ม "ถ่ายรูป QR แทน"';
+  if (n === 'NotReadableError' || n === 'AbortError') return 'กล้องถูกแอปอื่นใช้อยู่ ปิดแอปกล้องหรือแอปอื่นแล้วลองใหม่';
+  return 'เปิดกล้องไม่ได้ (' + (n || 'ไม่ทราบสาเหตุ') + ') ใช้ปุ่ม "ถ่ายรูป QR แทน"';
+}
+function scanMsg(t, isErr) {
+  const m = $('scan-msg');
+  if (!m) return;
+  m.textContent = t;
+  m.style.color = isErr ? 'var(--err)' : '';
+}
+
+$('btn-scan').onclick = openScanner;
+async function openScanner() {
+  openSheet(`<div class="between"><h2>สแกน QR บัตรสมาชิก</h2>
+      <button class="icon-btn" id="scan-close" aria-label="ปิด">${ICON_X}</button></div>
+    <div class="scan-view"><video id="scan-video" playsinline muted autoplay></video><div class="scan-frame" aria-hidden="true"></div></div>
+    <p class="muted" id="scan-msg" style="text-align:center;font-size:14px">กำลังเปิดกล้อง...</p>`);
+  $('scan-close').onclick = closeSheet;
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    scanMsg('เบราว์เซอร์นี้เปิดกล้องในหน้าเว็บไม่ได้ ใช้ปุ่ม "ถ่ายรูป QR แทน"', true);
+    return;
+  }
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+  } catch (e) {
+    if (e && (e.name === 'OverconstrainedError' || e.name === 'NotFoundError')) {
+      try { stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
+      catch (e2) { scanMsg(cameraErrorText(e2), true); return; }
+    } else { scanMsg(cameraErrorText(e), true); return; }
+  }
+  const v = $('scan-video');
+  if (!v) { stream.getTracks().forEach(t => t.stop()); return; } // ผู้ใช้ปิดหน้าต่างไปแล้ว
+  SC.stream = stream;
+  v.setAttribute('playsinline', '');
+  v.setAttribute('webkit-playsinline', '');
+  v.muted = true;
+  v.srcObject = stream;
+  try { await v.play(); } catch (e) {}
+  scanMsg('เล็ง QR ในบัตรสมาชิกให้อยู่ในกรอบ');
+
+  SC.detector = null;
+  if ('BarcodeDetector' in window) {
+    try {
+      const f = await BarcodeDetector.getSupportedFormats();
+      if (f.indexOf('qr_code') >= 0) SC.detector = new BarcodeDetector({ formats: ['qr_code'] });
+    } catch (e) {}
+  }
+  SC.canvas = document.createElement('canvas');
+  SC.ctx = SC.canvas.getContext('2d', { willReadFrequently: true });
+  clearInterval(SC.timer);
+  SC.timer = setInterval(scanFrame, 120);
+}
+
+async function scanFrame() {
+  const v = $('scan-video');
+  if (!v || !SC.stream || SC.busy || v.readyState < 2 || !v.videoWidth) return;
+  SC.busy = true;
+  try {
+    let text = null;
+    if (SC.detector) {
+      const r = await SC.detector.detect(v);
+      if (r && r.length) text = r[0].rawValue;
+    } else if (window.jsQR) {
+      const vw = v.videoWidth, vh = v.videoHeight;
+      const crop = Math.min(vw, vh) * 0.85;          // ตัดเฉพาะกลางภาพ ตรงกับกรอบเล็ง
+      const size = Math.min(640, Math.round(crop));
+      SC.canvas.width = size; SC.canvas.height = size;
+      SC.ctx.drawImage(v, (vw - crop) / 2, (vh - crop) / 2, crop, crop, 0, 0, size, size);
+      const im = SC.ctx.getImageData(0, 0, size, size);
+      const r = jsQR(im.data, size, size, { inversionAttempts: 'dontInvert' });
+      if (r && r.data) text = r.data;
+    }
+    if (text) {
+      if (navigator.vibrate) navigator.vibrate(60);
+      closeSheet();
+      doSearch(text.trim());
+    }
+  } catch (e) {
+  } finally { SC.busy = false; }
+}
+
+function stopScanner() {
+  clearInterval(SC.timer);
+  SC.timer = null;
+  if (SC.stream) { SC.stream.getTracks().forEach(t => t.stop()); SC.stream = null; }
+  SC.detector = null;
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden && SC.stream) closeSheet(); });
+
+// ---------------- photo fallback ----------------
+$('qr-photo').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  loading(true);
+  let text = null;
+  try { text = await decodeQrFromFile(f); } catch (err) { text = null; }
+  loading(false);
+  if (text) doSearch(text.trim());
+  else toast('อ่าน QR จากรูปไม่ได้ ถ่ายให้ QR อยู่กลางภาพและชัดขึ้น หรือค้นหาด้วยเบอร์', true);
+});
+function loadImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
+    img.src = url;
+  });
+}
+function scaledCanvas(img, maxSide) {
+  const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+  c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
+async function tryDecode(canvas) {
+  if ('BarcodeDetector' in window) {
+    try {
+      const r = await new BarcodeDetector({ formats: ['qr_code'] }).detect(canvas);
+      if (r && r.length) return r[0].rawValue;
+    } catch (e) {}
+  }
+  if (window.jsQR) {
+    const im = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height);
+    const r = jsQR(im.data, im.width, im.height, { inversionAttempts: 'attemptBoth' });
+    if (r && r.data) return r.data;
+  }
+  return null;
+}
+async function decodeQrFromFile(file) {
+  const img = await loadImageFile(file);
+  for (const size of [1200, 800, 1800]) {
+    const t = await tryDecode(scaledCanvas(img, size));
+    if (t) return t;
+  }
+  return null;
+}
+
+// ================================================================
+// checkout
+// ================================================================
+function resetCheckout() {
+  S.member = null; S.cart = []; S.perkIds = new Set(); S.mixedCredit = 0; S.rest = 'CASH';
+  setPaySlip(null);
+  $('q').value = '';
+  $('search-results').innerHTML = '';
+  $('bill-note').value = '';
+  $('stylist').value = '';
+  $('ck-find').classList.remove('hidden');
+  $('ck-member').classList.add('hidden');
+  $('ck-result').classList.add('hidden');
+  setPayBar(false);
+}
+$('btn-change').onclick = async () => {
+  if (S.cart.length) {
+    const ok = await confirmSheet('ยกเลิกบิลนี้?', '<p class="muted" style="font-size:15px">รายการที่เลือกไว้จะหายไป และกลับไปหน้าค้นหาลูกค้า</p>', 'ยกเลิกบิล', 'danger');
+    if (!ok) return;
+  }
+  resetCheckout();
+};
+
+function selectMember(m) {
+  S.member = m;
+  S.cart = [];
+  S.perkIds = new Set();
+  S.method = m.credit > 0 ? 'CREDIT' : 'CASH';
+  S.mixedCredit = 0;
+  S.rest = 'CASH';
+  setPaySlip(null);
+  $('mixed-credit').value = '';
+  $('bill-note').value = '';
+  $('ck-find').classList.add('hidden');
+  $('ck-result').classList.add('hidden');
+  $('ck-member').classList.remove('hidden');
+  renderMemberStrip();
+  renderAll();
+  setPayBar(true);
+  window.scrollTo(0, 0);
+}
+
+function renderMemberStrip() {
+  const m = S.member;
+  const perkTotal = m.perks.reduce((s, p) => s + p.remaining, 0);
+  $('m-strip').innerHTML = `
+    <div class="row">${avatarHtml(m.name, m.picture)}
+      <div style="flex:1;min-width:0">
+        <div class="row" style="gap:8px;flex-wrap:wrap"><span class="mname">${esc(m.name)}</span>${tierPill(m.tierCode, m.tierName)}</div>
+        <div class="muted">${esc(m.memberId)}${m.phone ? ' · ' + esc(m.phone) : ''}</div>
+      </div>
+      <button class="btn ghost" id="m-change">เปลี่ยน</button>
+    </div>
+    <div class="mstats">
+      <div class="mstat"><span>เครดิต</span><b>฿${fmt(m.credit)}</b></div>
+      <div class="mstat"><span>แต้ม</span><b>${fmt(m.points)}</b></div>
+      <div class="mstat"><span>สิทธิ์คงเหลือ</span><b>${perkTotal} ครั้ง</b></div>
+    </div>
+    ${m.pendingPurchase ? `<div class="note">มีสลิปซื้อระดับ ${esc(m.pendingPurchase.tierName)} รอเจ้าของร้านตรวจ</div>` : ''}`;
+  $('m-change').onclick = () => $('btn-change').click();
+}
+
+$('svc-chips').addEventListener('click', e => {
+  const b = e.target.closest('[data-code]');
+  if (!b) return;
+  const s = S.boot.services.find(x => x.code === b.dataset.code);
+  S.cart.push({ code: s.code, name: s.name, price: s.price });
+  renderAll();
+});
+
+function compute() {
+  const m = S.member;
+  const gross = S.cart.reduce((s, it) => s + (Number(it.price) || 0), 0);
+  const freeIdx = {};
+  const applied = [];
+  let discount = 0;
+  m.perks.forEach(p => {
+    if (!S.perkIds.has(p.id)) return;
+    if (p.type === 'FREE_SERVICE') {
+      const idx = S.cart.findIndex((it, i) => it.code === p.serviceCode && !freeIdx[i]);
+      if (idx < 0) return;
+      freeIdx[idx] = p.name;
+      discount += Number(S.cart[idx].price) || 0;
+    } else {
+      discount += p.discount;
+    }
+    applied.push(p.id);
+  });
+  discount = Math.min(discount, gross);
+  const net = Math.max(0, gross - discount);
+  let credit = 0, restMethod = '';
+  if (S.method === 'CREDIT') credit = net;
+  else if (S.method === 'CASH') restMethod = 'CASH';
+  else if (S.method === 'TRANSFER') restMethod = 'TRANSFER';
+  else if (S.method === 'MIXED') { credit = Math.min(net, Math.max(0, Number(S.mixedCredit) || 0)); restMethod = S.rest; }
+  const rest = net - credit;
+  const cash = restMethod === 'CASH' ? rest : 0;
+  const transfer = restMethod === 'TRANSFER' ? rest : 0;
+  const rate = Number(S.boot.bahtPerPoint) || 10;
+  return { gross, discount, net, credit, cash, transfer, points: Math.floor(net / rate), freeIdx, applied };
+}
+
+function renderAll() {
+  S.perkIds = new Set(compute().applied);   // ตัดสิทธิ์ที่ไม่มีบริการรองรับออก
+  renderCart(); renderPerks(); renderMethod(); renderSummary();
+}
+
+function renderCart() {
+  const c = compute();
+  $('cart-count').textContent = S.cart.length ? S.cart.length + ' รายการ' : '';
+  if (!S.cart.length) {
+    $('cart').innerHTML = '<div class="bill-empty">แตะบริการด้านบนเพื่อเพิ่มลงบิล</div>';
+    return;
+  }
+  $('cart').innerHTML = S.cart.map((it, i) => `
+    <div class="bill-item">
+      <div class="name">${esc(it.name)}${c.freeIdx[i] ? `<span class="free-tag">ใช้สิทธิ์: ${esc(c.freeIdx[i])}</span>` : ''}</div>
+      <label class="hidden" for="price-${i}">ราคา ${esc(it.name)}</label>
+      <input class="field price" id="price-${i}" data-i="${i}" type="number" inputmode="decimal" min="0" value="${Number(it.price) || 0}">
+      <button class="rm" data-rm="${i}" aria-label="ลบ ${esc(it.name)}">${ICON_X}</button>
+    </div>`).join('');
+}
+$('cart').addEventListener('input', e => {
+  if (!e.target.classList.contains('price')) return;
+  S.cart[Number(e.target.dataset.i)].price = Math.max(0, Number(e.target.value) || 0);
+  renderMethod(); renderSummary();
+});
+$('cart').addEventListener('click', e => {
+  const b = e.target.closest('[data-rm]');
+  if (!b) return;
+  S.cart.splice(Number(b.dataset.rm), 1);
+  renderAll();
+});
+
+function renderPerks() {
+  const m = S.member;
+  $('perks-sec').classList.toggle('hidden', !m.perks.length);
+  const svcName = code => { const s = S.boot.services.find(x => x.code === code); return s ? s.name : code; };
+  $('perks').innerHTML = m.perks.map(p => {
+    const on = S.perkIds.has(p.id);
+    const usable = p.type !== 'FREE_SERVICE' || S.cart.some(it => it.code === p.serviceCode);
+    const hint = !usable ? `เพิ่ม "${esc(svcName(p.serviceCode))}" ลงบิลก่อน` : `เหลือ ${p.remaining} ครั้ง ใช้ได้ถึง ${esc(p.expiresAt)}`;
+    return `<div class="perk ${on ? 'on' : ''}">
+      <div><div class="t">${esc(p.name)}${p.type === 'DISCOUNT' ? ` (−฿${fmt(p.discount)})` : ''}</div><div class="muted">${hint}</div></div>
+      <button class="switch" role="switch" aria-checked="${on}" data-pk="${esc(p.id)}" aria-label="ใช้สิทธิ์ ${esc(p.name)}" ${!usable && !on ? 'disabled' : ''}><span></span></button>
+    </div>`;
+  }).join('');
+}
+$('perks').addEventListener('click', e => {
+  const b = e.target.closest('[data-pk]');
+  if (!b || b.disabled) return;
+  const id = b.dataset.pk;
+  if (S.perkIds.has(id)) S.perkIds.delete(id);
+  else {
+    S.perkIds.add(id);
+    if (compute().applied.indexOf(id) < 0) toast('ไม่มีบริการในบิลที่ใช้สิทธิ์นี้ได้', true);
+  }
+  renderAll();
+});
+
+function renderMethod() {
+  const hasCredit = S.member.credit > 0;
+  if (!hasCredit && (S.method === 'CREDIT' || S.method === 'MIXED')) S.method = 'CASH';
+  $('seg-method').querySelectorAll('[data-m]').forEach(b => {
+    const needCredit = b.dataset.m === 'CREDIT' || b.dataset.m === 'MIXED';
+    b.disabled = needCredit && !hasCredit;
+    b.setAttribute('aria-pressed', b.dataset.m === S.method);
+    const label = { CREDIT: 'เครดิต', CASH: 'เงินสด', TRANSFER: 'โอน', MIXED: 'ผสม' }[b.dataset.m];
+    b.innerHTML = `<span>${label}</span>${b.disabled ? '<small>ไม่มีเครดิต</small>' : ''}`;
+  });
+  $('mixed-wrap').classList.toggle('hidden', S.method !== 'MIXED');
+  $('rest-chips').querySelectorAll('[data-r]').forEach(b => b.setAttribute('aria-pressed', b.dataset.r === S.rest));
+  $('slip-wrap').classList.toggle('hidden', !(compute().transfer > 0));
+}
+$('seg-method').addEventListener('click', e => {
+  const b = e.target.closest('[data-m]');
+  if (!b || b.disabled) return;
+  S.method = b.dataset.m;
+  if (S.method === 'MIXED' && !$('mixed-credit').value) {
+    S.mixedCredit = Math.min(S.member.credit, compute().net);
+    $('mixed-credit').value = S.mixedCredit;
+  }
+  renderMethod(); renderSummary();
+});
+$('mixed-credit').addEventListener('input', e => { S.mixedCredit = Number(e.target.value) || 0; renderMethod(); renderSummary(); });
+$('rest-chips').addEventListener('click', e => {
+  const b = e.target.closest('[data-r]');
+  if (!b) return;
+  S.rest = b.dataset.r;
+  renderMethod(); renderSummary();
+});
+
+// สลิปโอนค่าบริการ
+function setPaySlip(sl) {
+  S.paySlip = sl;
+  const holder = $('pay-slip-thumb');
+  if (sl) {
+    holder.outerHTML = `<img id="pay-slip-thumb" src="${sl.dataUrl}" alt="ตัวอย่างสลิป">`;
+    $('pay-slip-t').textContent = 'แนบสลิปแล้ว';
+    $('pay-slip-s').textContent = 'แตะเพื่อถ่ายใหม่';
+  } else {
+    if (holder.tagName === 'IMG') holder.outerHTML = `<span id="pay-slip-thumb" class="ph">${ICON_CAM}</span>`;
+    $('pay-slip-t').textContent = 'ถ่ายรูปสลิปจากมือถือลูกค้า';
+    $('pay-slip-s').textContent = 'ต้องแนบก่อนกดยืนยัน';
+  }
+  $('slip-pick').classList.toggle('done', !!sl);
+}
+$('pay-slip').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  loading(true);
+  try {
+    const c = scaledCanvas(await loadImageFile(f), 1400);
+    const dataUrl = c.toDataURL('image/jpeg', 0.82);
+    setPaySlip({ dataUrl: dataUrl, base64: dataUrl.split(',')[1] });
+  } catch (err) { toast('อ่านรูปไม่ได้ ลองถ่ายใหม่', true); }
+  finally { loading(false); renderSummary(); }
+});
+
+function renderSummary() {
+  const c = compute();
+  const m = S.member;
+  let h = `<div><span class="k">ยอดบริการ</span><span>฿${fmt(c.gross)}</span></div>`;
+  if (c.discount > 0) h += `<div><span class="k">ใช้สิทธิ์</span><span style="color:var(--ok)">−฿${fmt(c.discount)}</span></div>`;
+  if (c.credit > 0) h += `<div><span class="k">ตัดเครดิต</span><span>฿${fmt(c.credit)}</span></div>`;
+  if (c.cash > 0) h += `<div><span class="k">รับเงินสด</span><span>฿${fmt(c.cash)}</span></div>`;
+  if (c.transfer > 0) h += `<div><span class="k">รับโอน</span><span>฿${fmt(c.transfer)}</span></div>`;
+  if (c.credit > 0) h += `<div><span class="k">เครดิตหลังตัด</span><span>฿${fmt(m.credit - c.credit)}</span></div>`;
+  h += `<div><span class="k">แต้มที่ได้รับ</span><span style="color:var(--brand);font-weight:600">+${fmt(c.points)} แต้ม</span></div>`;
+  $('summary').innerHTML = h;
+
+  let warn = '';
+  if (!S.cart.length) warn = '';
+  else if (c.credit > m.credit) warn = `เครดิตไม่พอ (คงเหลือ ฿${fmt(m.credit)}) เลือก "ผสม" เพื่อรับส่วนที่เหลือเป็นเงินสดหรือโอน`;
+  else if (c.transfer > 0 && !S.paySlip) warn = 'ถ่ายรูปสลิปโอนจากลูกค้าก่อนกดยืนยัน';
+  $('paybar-warn').textContent = warn;
+  $('paybar-warn').classList.toggle('hidden', !warn);
+
+  $('pb-total').textContent = '฿' + fmt(c.net);
+  const btn = $('btn-pay');
+  btn.disabled = !S.cart.length || !!warn;
+  if (!S.cart.length) btn.textContent = 'เลือกบริการก่อน';
+  else if (c.net === 0) btn.textContent = 'บันทึกการใช้สิทธิ์';
+  else if (c.credit === c.net) btn.textContent = 'ยืนยันตัดเครดิต';
+  else if (c.credit === 0 && c.cash > 0) btn.textContent = 'บันทึกรับเงินสด';
+  else if (c.credit === 0 && c.transfer > 0) btn.textContent = 'บันทึกรับโอน';
+  else btn.textContent = 'ยืนยันชำระ';
+  setPayBar(!$('ck-member').classList.contains('hidden') && !$('p-checkout').classList.contains('hidden'));
+}
+
+$('btn-pay').onclick = async () => {
+  const c = compute();
+  const m = S.member;
+  const body = `<div class="sum">
+      <div><span class="k">ลูกค้า</span><span>${esc(m.name)}</span></div>
+      <div><span class="k">บริการ</span><span style="text-align:right">${esc(S.cart.map(i => i.name).join(' + '))}</span></div>
+      ${c.discount > 0 ? `<div><span class="k">ใช้สิทธิ์</span><span>−฿${fmt(c.discount)}</span></div>` : ''}
+      <div style="font-size:17px;font-weight:700;border-top:1px solid #E6D6DE;padding-top:8px;margin-top:2px"><span>ต้องชำระ</span><span>฿${fmt(c.net)}</span></div>
+      ${c.credit > 0 ? `<div><span class="k">ตัดเครดิต</span><span>฿${fmt(c.credit)}</span></div>` : ''}
+      ${c.cash > 0 ? `<div><span class="k">รับเงินสด</span><span>฿${fmt(c.cash)}</span></div>` : ''}
+      ${c.transfer > 0 ? `<div><span class="k">รับโอน</span><span>฿${fmt(c.transfer)}</span></div>` : ''}
+    </div>`;
+  const ok = await confirmSheet('ตรวจสอบก่อนยืนยัน', body, 'ยืนยัน');
+  if (!ok) return;
+  $('btn-pay').disabled = true;
+  loading(true);
+  try {
+    const res = await call('staffCheckout', S.token, {
+      memberId: m.memberId,
+      items: S.cart.map(i => ({ code: i.code, name: i.name, price: Number(i.price) || 0 })),
+      perkIds: c.applied,
+      method: S.method,
+      creditAmount: c.credit,
+      rest: S.rest,
+      slipBase64: c.transfer > 0 && S.paySlip ? S.paySlip.base64 : '',
+      stylist: $('stylist').value,
+      note: $('bill-note').value
+    });
+    showResult(res);
+  } catch (e) {
+    toastErr(e);
+    renderSummary();
+  } finally { loading(false); }
+};
+
+function showResult(r) {
+  S.member = r.member;
+  $('ck-member').classList.add('hidden');
+  setPayBar(false);
+  const el = $('ck-result');
+  el.innerHTML = `
+    <div class="sec" style="align-items:center;text-align:center;gap:8px;padding:24px 16px">
+      <div class="result-icon">${ICON_CHECK}</div>
+      <h2 style="font-size:21px;margin-top:6px">บันทึกเรียบร้อย</h2>
+      <p class="muted" style="font-size:14px">เลขที่บิล ${esc(r.billId)}</p>
+    </div>
+    <div class="sec">
+      <div class="sum" style="background:transparent;padding:0">
+        <div><span class="k">ลูกค้า</span><span>${esc(r.member.name)}</span></div>
+        <div><span class="k">บริการ</span><span style="text-align:right">${esc(r.itemNames)}</span></div>
+        <div><span class="k">ยอดบริการ</span><span>฿${fmt(r.gross)}</span></div>
+        ${r.discount > 0 ? `<div><span class="k">ใช้สิทธิ์</span><span>−฿${fmt(r.discount)}</span></div>` : ''}
+        <div style="font-size:17px;font-weight:700;border-top:1px solid var(--line);padding-top:8px;margin-top:2px"><span>ชำระแล้ว</span><span>฿${fmt(r.net)}</span></div>
+        ${r.payCredit > 0 ? `<div><span class="k">ตัดเครดิต</span><span>฿${fmt(r.payCredit)}</span></div>` : ''}
+        ${r.payCash > 0 ? `<div><span class="k">เงินสด</span><span>฿${fmt(r.payCash)}</span></div>` : ''}
+        ${r.payTransfer > 0 ? `<div><span class="k">โอน</span><span>฿${fmt(r.payTransfer)}</span></div>` : ''}
+        <div><span class="k">เครดิตคงเหลือ</span><span>฿${fmt(r.balanceAfter)}</span></div>
+        <div><span class="k">แต้มที่ได้รับ</span><span>+${fmt(r.pointsEarned)} แต้ม</span></div>
+      </div>
+    </div>
+    <button class="btn primary big" id="btn-next">รับลูกค้าคนถัดไป</button>
+    <button class="btn big" id="btn-again">เปิดบิลใหม่ให้ลูกค้าคนนี้</button>`;
+  el.classList.remove('hidden');
+  $('btn-next').onclick = resetCheckout;
+  $('btn-again').onclick = () => selectMember(S.member);
+  window.scrollTo(0, 0);
+}
+
+// ================================================================
+// admin: approve slips
+// ================================================================
+$('adm-tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-s]');
+  if (!b) return;
+  S.admTab = b.dataset.s;
+  $('adm-tabs').querySelectorAll('[data-s]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  loadAdmin();
+});
+$('adm-refresh').onclick = () => loadAdmin();
+
+async function refreshPendingBadge() {
+  try { setBadge((await call('adminListPurchases', S.token, 'PENDING')).length); } catch (e) {}
+}
+function setBadge(n) {
+  $('pending-badge').textContent = n;
+  $('pending-badge').classList.toggle('hidden', !n);
+}
+setInterval(() => {
+  if (S.token && S.me && ADMIN_ROLES.indexOf(S.me.role) >= 0 && document.visibilityState === 'visible') refreshPendingBadge();
+}, 90000);
+
+async function loadAdmin() {
+  $('adm-list').innerHTML = '<div class="empty">กำลังโหลด...</div>';
+  try {
+    const list = await call('adminListPurchases', S.token, S.admTab);
+    window._adm = list;
+    if (S.admTab === 'PENDING') setBadge(list.length);
+    if (!list.length) {
+      $('adm-list').innerHTML = `<div class="empty">${{ PENDING: 'ไม่มีสลิปรอตรวจ', APPROVED: 'ยังไม่มีรายการที่อนุมัติ', REJECTED: 'ยังไม่มีรายการที่ปฏิเสธ' }[S.admTab]}</div>`;
+      return;
+    }
+    $('adm-list').innerHTML = list.map((p, i) => `
+      <div class="sec" style="gap:12px">
+        <div class="row">${avatarHtml(p.name)}
+          <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600">${esc(p.name)}</div>
+          <div class="muted">${esc(p.memberId)} · ส่งเมื่อ ${esc(p.at)}</div></div>${tierPill(p.tierCode, p.tierName)}</div>
+        <div class="row" style="align-items:stretch">
+          <button class="btn" data-slip="${i}" style="flex-direction:column;width:76px;min-height:88px;padding:0;gap:4px;font-size:13px;flex-shrink:0">${ICON_SLIP}ดูสลิป</button>
+          <div class="sum" style="flex:1;justify-content:center">
+            <div><span class="k">ยอดที่ต้องได้รับ</span><b>฿${fmt(p.amount)}</b></div>
+            <div><span class="k">เครดิตที่จะเติม</span><span>฿${fmt(p.credit)}</span></div>
+          </div>
+        </div>
+        ${p.status === 'PENDING' ? `<div class="grid2"><button class="btn danger" data-rej="${i}">ปฏิเสธ</button><button class="btn primary" data-ok="${i}">อนุมัติ</button></div>` : ''}
+        ${p.status === 'APPROVED' ? `<p class="muted">อนุมัติโดย ${esc(p.reviewedBy)} เมื่อ ${esc(p.reviewedAt)}</p>` : ''}
+        ${p.status === 'REJECTED' ? `<p class="muted">ปฏิเสธโดย ${esc(p.reviewedBy)} เมื่อ ${esc(p.reviewedAt)}<br>เหตุผล: ${esc(p.rejectReason)}</p>` : ''}
+      </div>`).join('');
+  } catch (e) {
+    $('adm-list').innerHTML = '<div class="empty">โหลดรายการไม่สำเร็จ กดปุ่มโหลดใหม่ด้านบน</div>';
+    toastErr(e);
+  }
+}
+$('adm-list').addEventListener('click', e => {
+  const s = e.target.closest('[data-slip]'), ok = e.target.closest('[data-ok]'), rej = e.target.closest('[data-rej]');
+  if (s) viewSlip(window._adm[Number(s.dataset.slip)]);
+  if (ok) approve(window._adm[Number(ok.dataset.ok)]);
+  if (rej) reject(window._adm[Number(rej.dataset.rej)]);
+});
+async function viewSlip(p) {
+  openSheet(`<div class="between"><h2>สลิปของ ${esc(p.name)}</h2>
+    <button class="icon-btn" id="sl-close" aria-label="ปิด">${ICON_X}</button></div>
+    <p class="muted" style="font-size:14px">ต้องได้รับ ฿${fmt(p.amount)} · ส่งเมื่อ ${esc(p.at)}</p>
+    <div id="sl-body" class="empty"><div class="spinner" style="margin:0 auto"></div></div>`);
+  $('sl-close').onclick = closeSheet;
+  try {
+    if (!S.slipCache[p.id]) S.slipCache[p.id] = await call('adminGetSlip', S.token, p.id);
+    const b = $('sl-body');
+    if (b) b.outerHTML = `<img class="slip-img" src="${S.slipCache[p.id]}" alt="สลิปการโอนของ ${esc(p.name)}">`;
+  } catch (e) { const b = $('sl-body'); if (b) b.textContent = 'โหลดสลิปไม่สำเร็จ'; toastErr(e); }
+}
+async function approve(p) {
+  const ok = await confirmSheet('อนุมัติ ' + p.tierName + ' ให้ ' + p.name + '?',
+    `<div class="sum"><div><span class="k">ยอดที่ต้องได้รับ</span><b>฿${fmt(p.amount)}</b></div>
+     <div><span class="k">เครดิตที่จะเติม</span><span>฿${fmt(p.credit)}</span></div></div>
+     <p class="muted" style="font-size:14px">ตรวจยอดเงินเข้าบัญชีร้านแล้วจึงกดอนุมัติ เครดิตและสิทธิ์จะเข้าบัญชีลูกค้าทันที</p>`, 'อนุมัติ');
+  if (!ok) return;
+  loading(true);
+  try { await call('adminApprovePurchase', S.token, p.id); toast('อนุมัติแล้ว'); loadAdmin(); }
+  catch (e) { toastErr(e); } finally { loading(false); }
+}
+function reject(p) {
+  const reasons = ['ยอดเงินไม่ตรง', 'สลิปไม่ชัด', 'ไม่พบยอดเข้าบัญชี', 'สลิปซ้ำ'];
+  openSheet(`<h2>ปฏิเสธสลิปของ ${esc(p.name)}</h2>
+    <div class="chips" id="rj-chips">${reasons.map(r => `<button class="chip" data-r="${esc(r)}">${esc(r)}</button>`).join('')}</div>
+    <div><label class="label" for="rj-text">เหตุผล (ลูกค้าจะเห็นข้อความนี้)</label><textarea id="rj-text" class="field"></textarea></div>
+    <div class="grid2"><button class="btn big" id="rj-no">ยกเลิก</button><button class="btn big danger" id="rj-ok">ปฏิเสธสลิป</button></div>`);
+  $('rj-chips').onclick = e => { const b = e.target.closest('[data-r]'); if (b) $('rj-text').value = b.dataset.r; };
+  $('rj-no').onclick = closeSheet;
+  $('rj-ok').onclick = async () => {
+    const reason = $('rj-text').value.trim();
+    if (!reason) { toast('กรุณาระบุเหตุผล', true); return; }
+    closeSheet();
+    loading(true);
+    try { await call('adminRejectPurchase', S.token, p.id, reason); toast('ปฏิเสธแล้ว'); loadAdmin(); }
+    catch (e) { toastErr(e); } finally { loading(false); }
+  };
+}
+
+// ================================================================
+// start
+// ================================================================
+renderPin();
+(async function init() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('salon_staff') || 'null'); } catch (e) {}
+  if (!saved || !saved.token) return;
+  S.token = saved.token;
+  loading(true);
+  try { await enterApp(); }
+  catch (e) { forceLogout(); }
+  finally { loading(false); }
+})();
+</script>
 </body>
 </html>
