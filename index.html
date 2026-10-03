@@ -155,13 +155,22 @@ textarea.field{height:auto;min-height:88px;padding:12px 14px;resize:vertical}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.spinner{animation-duration:2.4s}}
 .result-icon{width:64px;height:64px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:flex;align-items:center;justify-content:center;margin:0 auto}
 
+/* ---------- settings ---------- */
+.cfg-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line2)}
+.cfg-row:first-child{border-top:0}
+.cfg-main{flex:1;min-width:0;text-align:left;background:transparent;border:0;padding:4px 0;display:flex;flex-direction:column;gap:2px;color:var(--ink)}
+.cfg-t{font-size:15px;font-weight:600}
+.perk-edit{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;background:#FDFBFC}
+#cfg-tabs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+#cfg-tabs .chip{flex-shrink:0}
+
 /* ---------- tablet / desktop ---------- */
 @media (min-width:860px){
   .app{max-width:1040px}
   .paybar-in{max-width:1040px}
   #ck-member:not(.hidden){display:grid!important;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
   #ck-member .col{display:flex;flex-direction:column;gap:14px}
-  #ck-find,#ck-result,#p-admin>*{max-width:560px;width:100%;margin-left:auto;margin-right:auto}
+  #ck-find,#ck-result,#p-admin>*,#p-settings>*{max-width:560px;width:100%;margin-left:auto;margin-right:auto}
 }
 </style>
 </head>
@@ -196,6 +205,7 @@ textarea.field{height:auto;min-height:88px;padding:12px 14px;resize:vertical}
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" id="tab-checkout" aria-selected="true">ชำระค่าบริการ</button>
         <button class="tab hidden" role="tab" id="tab-admin" aria-selected="false">อนุมัติสลิป<span class="badge hidden" id="pending-badge">0</span></button>
+        <button class="tab hidden" role="tab" id="tab-settings" aria-selected="false">ตั้งค่า</button>
       </div>
     </header>
 
@@ -310,6 +320,17 @@ textarea.field{height:auto;min-height:88px;padding:12px 14px;resize:vertical}
         </button>
       </div>
       <div id="adm-list" class="stack" style="gap:14px"></div>
+    </main>
+    <!-- ---------- SETTINGS (OWNER) ---------- -->
+    <main id="p-settings" class="hidden">
+      <div class="chips" id="cfg-tabs">
+        <button class="chip" data-c="shop" aria-pressed="true">ร้าน</button>
+        <button class="chip" data-c="svc" aria-pressed="false">บริการ</button>
+        <button class="chip" data-c="tier" aria-pressed="false">ระดับสมาชิก</button>
+        <button class="chip" data-c="reward" aria-pressed="false">ของรางวัล</button>
+        <button class="chip" data-c="staff" aria-pressed="false">พนักงาน</button>
+      </div>
+      <div id="cfg-body" class="stack" style="gap:14px"></div>
     </main>
   </section>
 </div>
@@ -503,6 +524,7 @@ async function enterApp() {
     `<button class="chip add" data-code="${esc(s.code)}">+ ${esc(s.name)}<span class="p">฿${fmt(s.price)}</span></button>`).join('');
   const isAdmin = ADMIN_ROLES.indexOf(S.me.role) >= 0;
   $('tab-admin').classList.toggle('hidden', !isAdmin);
+  $('tab-settings').classList.toggle('hidden', S.me.role !== 'OWNER');
   $('v-login').classList.add('hidden');
   $('v-app').classList.remove('hidden');
   showTab('checkout');
@@ -532,13 +554,15 @@ function forceLogout(msg) {
 // ================================================================
 $('tab-checkout').onclick = () => showTab('checkout');
 $('tab-admin').onclick = () => showTab('admin');
+$('tab-settings').onclick = () => showTab('settings');
 function showTab(t) {
-  $('tab-checkout').setAttribute('aria-selected', t === 'checkout');
-  $('tab-admin').setAttribute('aria-selected', t === 'admin');
-  $('p-checkout').classList.toggle('hidden', t !== 'checkout');
-  $('p-admin').classList.toggle('hidden', t !== 'admin');
+  ['checkout', 'admin', 'settings'].forEach(x => {
+    $('tab-' + x).setAttribute('aria-selected', t === x);
+    $('p-' + x).classList.toggle('hidden', t !== x);
+  });
   setPayBar(t === 'checkout' && !$('ck-member').classList.contains('hidden'));
   if (t === 'admin') loadAdmin();
+  if (t === 'settings') loadCfg();
 }
 
 // ================================================================
@@ -1143,6 +1167,272 @@ function reject(p) {
     try { await call('adminRejectPurchase', S.token, p.id, reason); toast('ปฏิเสธแล้ว'); loadAdmin(); }
     catch (e) { toastErr(e); } finally { loading(false); }
   };
+}
+
+// ================================================================
+// settings (OWNER only)
+// ================================================================
+const CFG_ACTIONS = {
+  getConfig: t => ({ staffAction: 'getConfig', token: t }),
+  saveSettings: (t, v) => ({ staffAction: 'saveSettings', token: t, values: v }),
+  saveService: (t, it) => ({ staffAction: 'saveService', token: t, item: it }),
+  saveTier: (t, it) => ({ staffAction: 'saveTier', token: t, item: it }),
+  saveReward: (t, it) => ({ staffAction: 'saveReward', token: t, item: it }),
+  saveStaff: (t, it) => ({ staffAction: 'saveStaff', token: t, item: it })
+};
+Object.assign(ACTIONS, CFG_ACTIONS);
+S.cfg = null;
+S.cfgSec = 'shop';
+
+$('cfg-tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-c]');
+  if (!b) return;
+  S.cfgSec = b.dataset.c;
+  $('cfg-tabs').querySelectorAll('[data-c]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  renderCfg();
+});
+
+async function loadCfg() {
+  $('cfg-body').innerHTML = '<div class="empty">กำลังโหลด...</div>';
+  try { S.cfg = await call('getConfig', S.token); renderCfg(); }
+  catch (e) { $('cfg-body').innerHTML = '<div class="empty">โหลดการตั้งค่าไม่สำเร็จ</div>'; toastErr(e); }
+}
+
+// บันทึกแล้วอัปเดตทั้งหน้าตั้งค่าและข้อมูลที่หน้าชำระใช้
+async function cfgSave(action, payload, okMsg) {
+  loading(true);
+  try {
+    S.cfg = await call(action, S.token, payload);
+    renderCfg();
+    try {
+      S.boot = await call('staffBootstrap', S.token);
+      $('shop-name').textContent = S.boot.shopName || 'หลังร้าน';
+      $('stylist').innerHTML = '<option value="">ไม่ระบุ</option>' + S.boot.stylists.map(n => `<option>${esc(n)}</option>`).join('');
+      $('svc-chips').innerHTML = S.boot.services.map(s =>
+        `<button class="chip add" data-code="${esc(s.code)}">+ ${esc(s.name)}<span class="p">฿${fmt(s.price)}</span></button>`).join('');
+    } catch (e) {}
+    toast(okMsg || 'บันทึกแล้ว');
+    return true;
+  } catch (e) { toastErr(e); return false; }
+  finally { loading(false); }
+}
+
+const svcName = code => { const s = (S.cfg.services || []).find(x => x.code === code); return s ? s.name : code; };
+const perkText = p => p.type === 'FREE_SERVICE' ? svcName(p.serviceCode) + ' ฟรี' : 'ส่วนลด ฿' + fmt(p.discount);
+function swHtml(on, attrs, label) {
+  return `<button class="switch" role="switch" aria-checked="${on}" aria-label="${esc(label)}" ${attrs}><span></span></button>`;
+}
+function cfgRow(main, sub, right, attrs) {
+  return `<div class="cfg-row"><button class="cfg-main" ${attrs}>
+      <span class="cfg-t">${main}</span>${sub ? `<span class="muted">${sub}</span>` : ''}</button>${right}</div>`;
+}
+
+function renderCfg() {
+  const c = S.cfg;
+  if (!c) return;
+  const el = $('cfg-body');
+  if (S.cfgSec === 'shop') {
+    const v = c.settings;
+    el.innerHTML = `<section class="sec">
+      <div><label class="label" for="st-shop">ชื่อร้าน</label><input class="field" id="st-shop" value="${esc(v.SHOP_NAME)}"></div>
+      <div class="grid2">
+        <div><label class="label" for="st-ppid">เลขพร้อมเพย์</label><input class="field" id="st-ppid" inputmode="numeric" value="${esc(v.PROMPTPAY_ID)}" placeholder="08XXXXXXXX"></div>
+        <div><label class="label" for="st-rate">กี่บาทได้ 1 แต้ม</label><input class="field" id="st-rate" type="number" inputmode="numeric" min="1" value="${esc(v.BAHT_PER_POINT)}"></div>
+      </div>
+      <div><label class="label" for="st-acc">ชื่อบัญชีรับโอน</label><input class="field" id="st-acc" value="${esc(v.ACCOUNT_NAME)}"></div>
+      <div><label class="label" for="st-terms">ลิงก์นโยบายความเป็นส่วนตัว</label><input class="field" id="st-terms" inputmode="url" value="${esc(v.TERMS_URL)}" placeholder="https://"></div>
+      <div><label class="label" for="st-tg">Telegram chat id <span class="muted">(ไม่บังคับ)</span></label><input class="field" id="st-tg" value="${esc(v.TELEGRAM_CHAT_ID)}"></div>
+      <div class="stack" style="gap:8px">
+        <div class="perk ${v.NOTIFY_ON_APPROVE ? 'on' : ''}"><div><div class="t">แจ้งลูกค้าเมื่ออนุมัติสลิป</div><div class="muted">ส่งข้อความ LINE พร้อมยอดเครดิต</div></div>
+          ${swHtml(v.NOTIFY_ON_APPROVE, 'id="st-n1"', 'แจ้งลูกค้าเมื่ออนุมัติสลิป')}</div>
+        <div class="perk ${v.NOTIFY_ON_CHARGE ? 'on' : ''}"><div><div class="t">แจ้งลูกค้าเมื่อชำระค่าบริการ</div><div class="muted">นับโควตาข้อความของ LINE OA</div></div>
+          ${swHtml(v.NOTIFY_ON_CHARGE, 'id="st-n2"', 'แจ้งลูกค้าเมื่อชำระค่าบริการ')}</div>
+      </div>
+      <button class="btn primary big" id="st-save">บันทึกข้อมูลร้าน</button>
+    </section>`;
+    ['st-n1', 'st-n2'].forEach(id => $(id).onclick = e => {
+      const b = e.currentTarget; const on = b.getAttribute('aria-checked') !== 'true';
+      b.setAttribute('aria-checked', on); b.closest('.perk').classList.toggle('on', on);
+    });
+    $('st-save').onclick = () => cfgSave('saveSettings', {
+      SHOP_NAME: $('st-shop').value, PROMPTPAY_ID: $('st-ppid').value, BAHT_PER_POINT: $('st-rate').value,
+      ACCOUNT_NAME: $('st-acc').value, TERMS_URL: $('st-terms').value, TELEGRAM_CHAT_ID: $('st-tg').value,
+      NOTIFY_ON_APPROVE: $('st-n1').getAttribute('aria-checked') === 'true',
+      NOTIFY_ON_CHARGE: $('st-n2').getAttribute('aria-checked') === 'true'
+    }, 'บันทึกข้อมูลร้านแล้ว');
+    return;
+  }
+
+  const add = { svc: '+ เพิ่มบริการ', tier: '+ เพิ่มระดับสมาชิก', reward: '+ เพิ่มของรางวัล', staff: '+ เพิ่มพนักงาน' }[S.cfgSec];
+  let rows = '';
+  if (S.cfgSec === 'svc') rows = c.services.map((s, i) => cfgRow(esc(s.name), '฿' + fmt(s.price),
+    swHtml(s.active, `data-tg="${i}"`, 'เปิดขาย ' + s.name), `data-ed="${i}"`)).join('');
+  if (S.cfgSec === 'tier') rows = c.tiers.map((t, i) => cfgRow(esc(t.name),
+    `จ่าย ฿${fmt(t.price)} ได้ ฿${fmt(t.credit)} · ${t.validDays} วัน${t.perks.length ? '<br>' + esc(t.perks.map(p => p.name + ' ' + p.qty + ' ครั้ง').join(', ')) : ''}`,
+    swHtml(t.active, `data-tg="${i}"`, 'เปิดขาย ' + t.name), `data-ed="${i}"`)).join('');
+  if (S.cfgSec === 'reward') rows = c.rewards.map((r, i) => cfgRow(esc(r.name), `${fmt(r.cost)} แต้ม · ${esc(perkText(r))}`,
+    swHtml(r.active, `data-tg="${i}"`, 'เปิดแลก ' + r.name), `data-ed="${i}"`)).join('');
+  if (S.cfgSec === 'staff') rows = c.staff.map((s, i) => cfgRow(esc(s.name) + (s.id === S.me.staffId ? ' <span class="muted">(คุณ)</span>' : ''),
+    ROLE_TH[s.role] || s.role, swHtml(s.active, `data-tg="${i}" ${s.id === S.me.staffId ? 'disabled' : ''}`, 'เปิดใช้งาน ' + s.name), `data-ed="${i}"`)).join('');
+  el.innerHTML = `<section class="sec" style="gap:0;padding:4px 16px">${rows || '<div class="empty">ยังไม่มีรายการ</div>'}</section>
+    <button class="btn big" id="cfg-add">${add}</button>`;
+  $('cfg-add').onclick = () => openCfgForm(null);
+}
+
+$('cfg-body').addEventListener('click', e => {
+  if (S.cfgSec === 'shop') return;
+  const list = { svc: S.cfg.services, tier: S.cfg.tiers, reward: S.cfg.rewards, staff: S.cfg.staff }[S.cfgSec];
+  const tg = e.target.closest('[data-tg]');
+  if (tg && !tg.disabled) {
+    const it = Object.assign({}, list[Number(tg.dataset.tg)]);
+    it.active = !it.active;
+    const action = { svc: 'saveService', tier: 'saveTier', reward: 'saveReward', staff: 'saveStaff' }[S.cfgSec];
+    cfgSave(action, it, it.active ? 'เปิดใช้งานแล้ว' : 'ปิดใช้งานแล้ว');
+    return;
+  }
+  const ed = e.target.closest('[data-ed]');
+  if (ed) openCfgForm(list[Number(ed.dataset.ed)]);
+});
+
+function svcOptions(sel) {
+  return S.cfg.services.map(s => `<option value="${esc(s.code)}" ${s.code === sel ? 'selected' : ''}>${esc(s.name)}${s.active ? '' : ' (ปิดขาย)'}</option>`).join('');
+}
+function perkTypeFields(prefix, type, serviceCode, discount) {
+  return `<div class="grid2">
+    <div><label class="label" for="${prefix}-type">ประเภท</label>
+      <select class="field" id="${prefix}-type" data-ptype="${prefix}">
+        <option value="FREE_SERVICE" ${type !== 'DISCOUNT' ? 'selected' : ''}>บริการฟรี</option>
+        <option value="DISCOUNT" ${type === 'DISCOUNT' ? 'selected' : ''}>ส่วนลด (บาท)</option></select></div>
+    <div class="${type === 'DISCOUNT' ? 'hidden' : ''}" id="${prefix}-svcw"><label class="label" for="${prefix}-svc">บริการ</label>
+      <select class="field" id="${prefix}-svc">${svcOptions(serviceCode)}</select></div>
+    <div class="${type === 'DISCOUNT' ? '' : 'hidden'}" id="${prefix}-discw"><label class="label" for="${prefix}-disc">ส่วนลด (บาท)</label>
+      <input class="field" id="${prefix}-disc" type="number" inputmode="numeric" min="1" value="${discount || ''}"></div>
+  </div>`;
+}
+function bindPerkType(root) {
+  root.querySelectorAll('[data-ptype]').forEach(sel => sel.onchange = () => {
+    const p = sel.dataset.ptype;
+    $(p + '-svcw').classList.toggle('hidden', sel.value === 'DISCOUNT');
+    $(p + '-discw').classList.toggle('hidden', sel.value !== 'DISCOUNT');
+  });
+}
+function readPerkType(prefix) {
+  const type = $(prefix + '-type').value;
+  return { type: type, serviceCode: type === 'FREE_SERVICE' ? $(prefix + '-svc').value : '', discount: type === 'DISCOUNT' ? $(prefix + '-disc').value : 0 };
+}
+function formShell(title, inner, isNew) {
+  return `<div class="between"><h2>${esc(title)}</h2><button class="icon-btn" id="fm-close" aria-label="ปิด">${ICON_X}</button></div>
+    ${inner}
+    <div class="perk on" id="fm-active-row"><div class="t">เปิดใช้งาน</div>${swHtml(true, 'id="fm-active"', 'เปิดใช้งาน')}</div>
+    <button class="btn primary big" id="fm-save">${isNew ? 'เพิ่ม' : 'บันทึกการแก้ไข'}</button>`;
+}
+function bindShell(it) {
+  $('fm-close').onclick = closeSheet;
+  const sw = $('fm-active');
+  const on = it ? it.active !== false : true;
+  sw.setAttribute('aria-checked', on);
+  $('fm-active-row').classList.toggle('on', on);
+  sw.onclick = () => {
+    if (sw.disabled) return;
+    const v = sw.getAttribute('aria-checked') !== 'true';
+    sw.setAttribute('aria-checked', v); $('fm-active-row').classList.toggle('on', v);
+  };
+}
+const fmActive = () => $('fm-active').getAttribute('aria-checked') === 'true';
+
+function openCfgForm(it) {
+  const isNew = !it;
+  if (S.cfgSec === 'svc') {
+    openSheet(formShell(isNew ? 'เพิ่มบริการ' : 'แก้ไขบริการ', `
+      <div><label class="label" for="fm-name">ชื่อบริการ</label><input class="field" id="fm-name" value="${esc(it ? it.name : '')}"></div>
+      <div><label class="label" for="fm-price">ราคาปกติ (บาท)</label><input class="field" id="fm-price" type="number" inputmode="decimal" min="0" value="${it ? it.price : ''}"></div>
+      <p class="muted">ราคาในบิลยังแก้ได้ตอนชำระเงิน</p>`, isNew));
+    bindShell(it);
+    $('fm-save').onclick = async () => {
+      if (await cfgSave('saveService', { code: it ? it.code : '', name: $('fm-name').value, price: $('fm-price').value, active: fmActive() })) closeSheet();
+    };
+  }
+
+  if (S.cfgSec === 'reward') {
+    openSheet(formShell(isNew ? 'เพิ่มของรางวัล' : 'แก้ไขของรางวัล', `
+      <div><label class="label" for="fm-name">ชื่อของรางวัล</label><input class="field" id="fm-name" value="${esc(it ? it.name : '')}" placeholder="เช่น สระ-ไดร์ ฟรี 1 ครั้ง"></div>
+      <div><label class="label" for="fm-desc">คำอธิบาย <span class="muted">(ไม่บังคับ)</span></label><input class="field" id="fm-desc" value="${esc(it ? it.description : '')}"></div>
+      <div class="grid2">
+        <div><label class="label" for="fm-cost">ใช้กี่แต้ม</label><input class="field" id="fm-cost" type="number" inputmode="numeric" min="1" value="${it ? it.cost : ''}"></div>
+        <div><label class="label" for="fm-days">ใช้ได้กี่วันหลังแลก</label><input class="field" id="fm-days" type="number" inputmode="numeric" min="1" value="${it ? it.validDays : 30}"></div>
+      </div>
+      ${perkTypeFields('rw', it ? it.type : 'FREE_SERVICE', it ? it.serviceCode : '', it ? it.discount : '')}`, isNew));
+    bindShell(it); bindPerkType($('sheet'));
+    $('fm-save').onclick = async () => {
+      const pt = readPerkType('rw');
+      if (await cfgSave('saveReward', Object.assign({ code: it ? it.code : '', name: $('fm-name').value, description: $('fm-desc').value,
+        cost: $('fm-cost').value, validDays: $('fm-days').value, active: fmActive() }, pt))) closeSheet();
+    };
+  }
+
+  if (S.cfgSec === 'staff') {
+    const self = it && it.id === S.me.staffId;
+    openSheet(formShell(isNew ? 'เพิ่มพนักงาน' : 'แก้ไขพนักงาน', `
+      <div><label class="label" for="fm-name">ชื่อ</label><input class="field" id="fm-name" value="${esc(it ? it.name : '')}"></div>
+      <div class="grid2">
+        <div><label class="label" for="fm-role">บทบาท</label>
+          <select class="field" id="fm-role" ${self ? 'disabled' : ''}>${['STAFF', 'ADMIN', 'OWNER'].map(r =>
+            `<option value="${r}" ${(it ? it.role : 'STAFF') === r ? 'selected' : ''}>${ROLE_TH[r]}</option>`).join('')}</select></div>
+        <div><label class="label" for="fm-pin">${isNew ? 'PIN' : 'PIN ใหม่'}</label>
+          <input class="field" id="fm-pin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="${isNew ? '4-8 หลัก' : 'เว้นว่างถ้าไม่เปลี่ยน'}"></div>
+      </div>
+      <p class="muted">พนักงาน: ชำระค่าบริการ · แอดมิน: + อนุมัติสลิป · เจ้าของร้าน: + ตั้งค่าทั้งหมด</p>`, isNew));
+    bindShell(it);
+    if (self) { $('fm-active').disabled = true; }
+    $('fm-save').onclick = async () => {
+      if (await cfgSave('saveStaff', { id: it ? it.id : '', name: $('fm-name').value, role: $('fm-role').value,
+        pin: $('fm-pin').value, active: fmActive() })) closeSheet();
+    };
+  }
+
+  if (S.cfgSec === 'tier') {
+    const perks = it ? it.perks.map(p => Object.assign({}, p)) : [];
+    const perkRows = () => perks.map((p, i) => `<div class="perk-edit">
+        <div class="between"><b style="font-size:14px">สิทธิ์ที่ ${i + 1}</b>
+          <button class="rm" data-prm="${i}" aria-label="ลบสิทธิ์ที่ ${i + 1}">${ICON_X}</button></div>
+        ${perkTypeFields('tp' + i, p.type, p.serviceCode, p.discount)}
+        <div><label class="label" for="tp${i}-qty">จำนวนครั้ง</label>
+          <input class="field" id="tp${i}-qty" type="number" inputmode="numeric" min="1" value="${p.qty || 1}"></div>
+      </div>`).join('');
+    openSheet(formShell(isNew ? 'เพิ่มระดับสมาชิก' : 'แก้ไขระดับ ' + it.name, `
+      <div><label class="label" for="fm-name">ชื่อระดับ</label><input class="field" id="fm-name" value="${esc(it ? it.name : '')}" placeholder="เช่น Diamond"></div>
+      <div class="grid2">
+        <div><label class="label" for="fm-price">ราคา (บาท)</label><input class="field" id="fm-price" type="number" inputmode="numeric" min="1" value="${it ? it.price : ''}"></div>
+        <div><label class="label" for="fm-credit">ได้เครดิต (บาท)</label><input class="field" id="fm-credit" type="number" inputmode="numeric" min="1" value="${it ? it.credit : ''}"></div>
+      </div>
+      <div><label class="label" for="fm-days">อายุเครดิตและสิทธิ์ (วัน)</label><input class="field" id="fm-days" type="number" inputmode="numeric" min="1" value="${it ? it.validDays : 365}"></div>
+      <div class="stack" style="gap:10px"><span class="label" style="margin:0">สิทธิพิเศษของระดับนี้</span>
+        <div id="tp-list" class="stack" style="gap:10px"></div>
+        <button class="btn" id="tp-add" type="button">+ เพิ่มสิทธิ์</button></div>
+      <p class="muted">การแก้ไขมีผลกับการซื้อครั้งใหม่ ลูกค้าที่ซื้อไปแล้วได้สิทธิ์ตามเดิม</p>`, isNew));
+    bindShell(it);
+    const syncPerks = () => perks.forEach((p, i) => {
+      if (!$('tp' + i + '-type')) return;
+      Object.assign(p, readPerkType('tp' + i), { qty: $('tp' + i + '-qty').value, name: '' });
+    });
+    const drawPerks = () => {
+      $('tp-list').innerHTML = perkRows() || '<p class="muted">ยังไม่มีสิทธิ์พิเศษ</p>';
+      bindPerkType($('tp-list'));
+    };
+    drawPerks();
+    $('tp-add').onclick = () => { syncPerks(); perks.push({ type: 'FREE_SERVICE', serviceCode: (S.cfg.services[0] || {}).code, qty: 1 }); drawPerks(); };
+    $('tp-list').onclick = e => {
+      const b = e.target.closest('[data-prm]');
+      if (!b) return;
+      syncPerks(); perks.splice(Number(b.dataset.prm), 1); drawPerks();
+    };
+    $('fm-save').onclick = async () => {
+      syncPerks();
+      if (await cfgSave('saveTier', { code: it ? it.code : '', name: $('fm-name').value, price: $('fm-price').value,
+        credit: $('fm-credit').value, validDays: $('fm-days').value, note: it ? it.note : '', active: fmActive(),
+        perks: perks.map(p => ({ type: p.type, serviceCode: p.serviceCode, discount: p.discount, qty: p.qty })) })) closeSheet();
+    };
+  }
 }
 
 // ================================================================
